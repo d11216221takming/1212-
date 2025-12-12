@@ -291,8 +291,8 @@
         // Draw a card from deck
         function drawCard() {
             if (gameState.deck.length === 0) {
-                addMessage('牌組已用完！重新洗牌。');
-                gameState.deck = shuffle(initDeck());
+                addMessage('牌組已用完，無法繼續發牌。請開始新的一局。');
+                return null;
             }
             return gameState.deck.pop();
         }
@@ -309,12 +309,14 @@
             }
 
             // Adjust for aces
-            while (score > 21 && aces > 0) {
+            let acesAsEleven = aces;
+            while (score > 21 && acesAsEleven > 0) {
                 score -= 10;
-                aces--;
+                acesAsEleven--;
             }
 
-            const isSoft = aces > 0 && score <= 21;
+            // isSoft is true when at least one ace is still valued as 11
+            const isSoft = acesAsEleven > 0 && score <= 21;
             return { score, isSoft };
         }
 
@@ -454,6 +456,15 @@
             if (gameState.phase !== 'playerTurn') return;
 
             const card = drawCard();
+            if (!card) {
+                // No cards left, end the game
+                gameState.phase = 'finished';
+                gameState.result = 'push';
+                addMessage('牌組已耗盡，本局和局。');
+                updateButtons();
+                return;
+            }
+            
             gameState.playerHand.push(card);
             
             const playerResult = calculateScore(gameState.playerHand);
@@ -493,13 +504,18 @@
 
             while (dealerResult.score <= 16) {
                 const card = drawCard();
+                if (!card) {
+                    // No cards left, dealer can't continue
+                    addMessage('牌組已耗盡，莊家無法繼續。');
+                    break;
+                }
                 gameState.dealerHand.push(card);
                 dealerResult = calculateScore(gameState.dealerHand);
                 addMessage(`莊家抽到 ${card.display}（目前 ${dealerResult.score} 點）`);
                 renderCards();
             }
 
-            if (dealerResult.score >= 17) {
+            if (dealerResult.score >= 17 && dealerResult.score <= 21) {
                 addMessage(`莊家停牌（${dealerResult.score} 點）`);
             }
 
