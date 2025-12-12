@@ -310,6 +310,9 @@
     </div>
 
     <script>
+        // 常數定義
+        const REVERSED_PROBABILITY = 0.5; // 逆位機率 50%
+
         // 塔羅牌資料庫（精簡版 12 張）
         const TAROT_DECK = [
             {
@@ -447,7 +450,7 @@
             
             // 檢查牌庫是否足夠
             if (TAROT_DECK.length < numCards) {
-                alert('牌庫張數不足！');
+                console.error('牌庫張數不足！');
                 return null;
             }
 
@@ -457,7 +460,7 @@
 
             // 建立結果
             const results = drawnCards.map((card, index) => {
-                const orientation = allowReversed && Math.random() < 0.5 ? 'reversed' : 'upright';
+                const orientation = allowReversed && Math.random() < REVERSED_PROBABILITY ? 'reversed' : 'upright';
                 return {
                     card: card,
                     orientation: orientation,
@@ -502,7 +505,7 @@
                         positionPrefix = `【${position.label}】`;
                 }
 
-                summary += `<p class="summary-text">${positionPrefix} ${card.name}（${orientText}）— ${meaning}（關鍵詞：${keywords.join('、')}）</p>`;
+                summary += `<p class="summary-text">${escapeHtml(positionPrefix)} ${escapeHtml(card.name)}（${orientText}）— ${escapeHtml(meaning)}（關鍵詞：${keywords.map(k => escapeHtml(k)).join('、')}）</p>`;
             });
 
             return summary;
@@ -571,26 +574,28 @@
             document.getElementById('clearBtn').disabled = true;
         }
 
-        // 事件監聽器
-        let currentSpreadId = 'single';
-        let currentAllowReversed = false;
-        let currentQuestion = '';
+        // 應用程式狀態管理
+        const appState = {
+            spreadId: 'single',
+            allowReversed: false,
+            question: ''
+        };
 
         document.getElementById('drawBtn').addEventListener('click', function() {
-            currentSpreadId = document.getElementById('spread').value;
-            currentAllowReversed = document.getElementById('allowReversed').checked;
-            currentQuestion = document.getElementById('question').value;
+            appState.spreadId = document.getElementById('spread').value;
+            appState.allowReversed = document.getElementById('allowReversed').checked;
+            appState.question = document.getElementById('question').value;
 
-            const results = drawCards(currentSpreadId, currentAllowReversed);
+            const results = drawCards(appState.spreadId, appState.allowReversed);
             if (results) {
-                displayResults(results, currentSpreadId, currentQuestion);
+                displayResults(results, appState.spreadId, appState.question);
             }
         });
 
         document.getElementById('redrawBtn').addEventListener('click', function() {
-            const results = drawCards(currentSpreadId, currentAllowReversed);
+            const results = drawCards(appState.spreadId, appState.allowReversed);
             if (results) {
-                displayResults(results, currentSpreadId, currentQuestion);
+                displayResults(results, appState.spreadId, appState.question);
             }
         });
 
